@@ -1,0 +1,10 @@
+"I love " + "python"\\"I love python"
+6 == 12\\False
+4.5 // 2\\2
+type(1 / 2)\\class 'float'
+"%s" % "snow storm"[6:8]\\to
+len([1, 2, 3, None, (), [], ])\\6
+num = 0 if 23 > 10 else 11\\0
+"Hi" * 4\\HiHiHiHi
+eval('300 / 10 * 10')\\300.0
+print("%s" % "Alice says I python love"[20:-1] + "I love"[-1] * eval('50 //10'))\\loveeeee
