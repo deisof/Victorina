@@ -65,7 +65,7 @@ class MyWidget(QMainWindow, Ui_MainWindow1):
             self.label_4.setText('Error: Введите имя')
             return
         except ExistingValue:
-            self.label_4.setText('Error: Пользователь с таким именем уже существует')
+            self.label_4.setText('Error: Пользователь с таким именем уже есть')
             return
         cur.execute(
             "INSERT INTO record(name, score) VALUES (?, ?)",
