@@ -1,11 +1,23 @@
 import sys
 import sqlite3
-from PyQt5.QtWidgets import QApplication, QMainWindow, QDesktopWidget, QMessageBox, QTableWidgetItem, QLabel
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDesktopWidget, QMessageBox, QTableWidgetItem
 from PyQt5.QtGui import QIcon, QPixmap, QImage, QPalette, QBrush
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import QSize
 from design_for_sign_up import Ui_MainWindow1
 from design_for_victorina import Ui_MainWindow2
 from design_for_rank import Ui_MainWindow3
+
+
+class UserError(Exception):  # создание собствнных ошибок
+    pass
+
+
+class EmptyValue(UserError):
+    pass
+
+
+class ExistingValue(UserError):
+    pass
 
 
 class MyWidget(QMainWindow, Ui_MainWindow1):
@@ -30,7 +42,7 @@ class MyWidget(QMainWindow, Ui_MainWindow1):
         self.label_5.move(90, 80)
         self.label_5.setPixmap(self.pixmap)
 
-        # self.con = sqlite3.connect("db/birthday.db")
+        self.con = sqlite3.connect("project.db")
 
         nImage = QImage("020 New Life.png")
         sImage = nImage.scaled(QSize(374, 390))
@@ -39,24 +51,35 @@ class MyWidget(QMainWindow, Ui_MainWindow1):
         self.setPalette(palette)
 
     def sign_up(self):
+        name = self.lineEdit.text()
+        cur = self.con.cursor()
+        try:
+            if name:
+                check = f"SELECT id FROM record WHERE name='{name}'"
+                result = cur.execute(check).fetchall()
+                if result:
+                    raise ExistingValue
+            else:
+                raise EmptyValue
+        except EmptyValue:
+            self.label_4.setText('Error: Введите имя')
+            return
+        except ExistingValue:
+            self.label_4.setText('Error: Пользователь с таким именем уже существует')
+            return
+        cur.execute(
+            "INSERT INTO record(name, score) VALUES (?, ?)",
+            (name, 0))
+        self.con.commit()
+        self.new_window()
+
+    def new_window(self):
         self.window1 = Victorina()
         self.hide()
         self.window1.show()
 
 
-class UserError(Exception):  # создание собствнных ошибок
-    pass
-
-
-class EmptyValue(UserError):
-    pass
-
-
-class ExistingValue(UserError):
-    pass
-
-
-class Victorina(QMainWindow, Ui_MainWindow2):  # класс для добавления в БД информации о новом человеке
+class Victorina(QMainWindow, Ui_MainWindow2):
     def __init__(self):
         super(Victorina, self).__init__()
         self.setupUi(self)
@@ -87,8 +110,7 @@ class Victorina(QMainWindow, Ui_MainWindow2):  # класс для добавл�
         pass
 
     def check(self):
-        # self.finish()
-        pass
+        self.finish()
 
     def finish(self):
         self.window2 = Rank()
@@ -111,7 +133,7 @@ class Rank(QMainWindow, Ui_MainWindow3):
         window.moveCenter(window_central)
         self.move(window.topLeft())
 
-        # self.con = sqlite3.connect("db/birthday.db")
+        self.con = sqlite3.connect("project.db")
 
         self.pushButton.clicked.connect(self.load)
 
@@ -122,26 +144,20 @@ class Rank(QMainWindow, Ui_MainWindow3):
         self.setPalette(palette)
 
     def load(self):
-        pass
-        # cur = self.con.cursor()
-        # self.res_id_hor = f"SELECT horoscope FROM information WHERE name='{name}'"
-        # id = cur.execute(self.res_id_hor)
-        # id = list(id)
-        # id = id[0][0]
-        # if not id:
-        #     self.label_4.setText('Error: Запись не найдена')
-        #     self.label_5.setText('')
-        #     self.listWidget.clear()
-        #     return
-        # else:
-        #     self.label_4.setText('')
-        #     self.res_descr_hor = f"SELECT description FROM horoscope_bd WHERE id = {id}"
-        #     self.res_descr_hor = cur.execute(self.res_descr_hor).fetchall()
-        #     self.res_title_hor = f"SELECT title FROM horoscope_bd WHERE id = {id}"
-        #     self.res_title_hor = cur.execute(self.res_title_hor).fetchall()
-        #     self.label_5.setText(self.res_title_hor[0][0])
-        #     need = self.res_descr_hor[0][0].split('*')
-        #     self.listWidget.addItems(need)
+        self.queue = f"SELECT name, score FROM record"
+        cur = self.con.cursor()
+        result = cur.execute(self.queue).fetchall()
+        if not result:
+            pass
+        else:
+            self.tableWidget.setRowCount(len(result))
+            self.tableWidget.setColumnCount(len(result[0]))
+            column = (el[0] for el in cur.description)
+            column = tuple(column)
+            self.tableWidget.setHorizontalHeaderLabels(column)
+            for i, elem in enumerate(result):
+                for j, val in enumerate(elem):
+                    self.tableWidget.setItem(i, j, QTableWidgetItem(str(val)))
 
 
 if __name__ == '__main__':
