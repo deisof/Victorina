@@ -88,12 +88,28 @@ class Victorina(QMainWindow, Ui_MainWindow2):
     def initUI(self):
         self.setWindowIcon(QIcon('python_embl1.jpg'))
         self.setFixedSize(639, 312)
-
         window = self.frameGeometry()
         window_central = QDesktopWidget().availableGeometry().center()
         window.moveCenter(window_central)
         self.move(window.topLeft())
-
+        with open('tests.txt', encoding='utf8') as f:
+            self.text = f.read().split('\\')
+        self.text = [value for value in self.text if value]
+        self.question = []
+        self.answer = []
+        self.explanation = []
+        q = 1
+        for i in range(len(self.text)):
+            if i % 3 == 0:
+                self.question.append(self.text[i])
+            elif i == q:
+                self.answer.append(self.text[i])
+                q += 3
+            else:
+                self.explanation.append(self.text[i])
+        self.x = 0
+        self.y = 0
+        self.lcdNumber.display(self.x)
         self.pushButton.clicked.connect(self.start)
         self.pushButton_2.clicked.connect(self.check)
 
@@ -104,13 +120,44 @@ class Victorina(QMainWindow, Ui_MainWindow2):
         self.setPalette(palette)
 
     def start(self):
-        pass
+        if self.y != len(self.question):
+            if self.y == 0:
+                self.label_3.setText(f'{self.y + 1}/10')
+            self.listWidget.clear()
+            self.listWidget.addItem(self.question[self.y])
+        else:
+            self.finish()
 
     def question(self):
         pass
 
     def check(self):
-        self.finish()
+        ans = self.lineEdit.text()
+        if ans == self.answer[self.y]:
+            message = QMessageBox.information(self, '', "Вы ответили правильно, так держать", QMessageBox.Ok)
+            if message == QMessageBox.Ok:
+                self.x += 1
+                self.lcdNumber.display(self.x)
+                self.y += 1
+                self.label_3.setText(f'{self.y + 1}/10')
+                self.lineEdit.clear()
+                self.start()
+        else:
+            message = QMessageBox.information(self, '', "Вы ответили неверно, хотети увидеть объяснение", QMessageBox.Yes, QMessageBox.No)
+            if message == QMessageBox.Yes:
+                message = QMessageBox.information(self, '', self.explanation[self.y], QMessageBox.Ok)
+                if message == QMessageBox.Ok:
+                    self.y += 1
+                    self.label_3.setText(f'{self.y + 1}/10')
+                    self.lineEdit.clear()
+                    self.start()
+            else:
+                self.y += 1
+                self.label_3.setText(f'{self.y + 1}/10')
+                self.lineEdit.clear()
+                self.start()
+
+
 
     def finish(self):
         self.window2 = Rank()
@@ -132,9 +179,8 @@ class Rank(QMainWindow, Ui_MainWindow3):
         window_central = QDesktopWidget().availableGeometry().center()
         window.moveCenter(window_central)
         self.move(window.topLeft())
-
         self.con = sqlite3.connect("project.db")
-
+        self.label_3.setText(f'{self.x}')
         self.pushButton.clicked.connect(self.load)
 
         oImage = QImage("020 New Life.png")
