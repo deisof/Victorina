@@ -1,8 +1,8 @@
-import sys
 import sqlite3
+import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDesktopWidget, QMessageBox, QTableWidgetItem
 from PyQt5.QtGui import QIcon, QPixmap, QImage, QPalette, QBrush
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, QTimer
 from design_for_sign_up import Ui_MainWindow1
 from design_for_victorina import Ui_MainWindow2
 from design_for_rank import Ui_MainWindow3
@@ -101,6 +101,7 @@ class Victorina(QMainWindow, Ui_MainWindow2):
         self.answer = []
         self.explanation = []
         counter = 1
+        self.duration = 15
         for i in range(len(self.text)):
             if i % 3 == 0:
                 self.question.append(self.text[i])
@@ -111,6 +112,9 @@ class Victorina(QMainWindow, Ui_MainWindow2):
                 self.explanation.append(self.text[i])
         self.balls = 0
         self.answer_counter = 0
+        self.widget_counter_int = 0
+        self.lcdNumber_2.display(self.duration)
+        self.pushButton_2.setEnabled(False)
         self.lcdNumber.display(self.balls)
         self.pushButton.clicked.connect(self.start)
         self.pushButton_2.clicked.connect(self.check)
@@ -125,13 +129,36 @@ class Victorina(QMainWindow, Ui_MainWindow2):
         if self.answer_counter != len(self.question):
             if self.answer_counter == 0:
                 self.label_3.setText(f'{self.answer_counter + 1}/10')
+                self.timer_start()
+            self.time_left_int = self.duration
+            self.pushButton_2.setEnabled(True)
             self.listWidget.clear()
             self.listWidget.addItem(self.question[self.answer_counter])
         else:
             self.finish()
 
-    def question(self):
-        pass
+    def timer_start(self):
+        self.time_left_int = self.duration
+        self.my_qtimer = QTimer(self)
+        self.my_qtimer.timeout.connect(self.timer_timeout)
+        self.my_qtimer.start(1000)
+        self.update_gui()
+
+    def timer_timeout(self):
+        self.time_left_int -= 1
+        if self.time_left_int == 0:
+            self.time_left_int = self.duration
+            self.lcdNumber_2.display(0)
+            message = QMessageBox.information(self, '', "Время вышло", QMessageBox.Ok)
+            if message == QMessageBox.Ok:
+                self.answer_counter += 1
+                self.label_3.setText(f'{self.answer_counter + 1}/10')
+                self.lineEdit.clear()
+                self.start()
+        self.update_gui()
+
+    def update_gui(self):
+        self.lcdNumber_2.display(self.time_left_int)
 
     def check(self):
         ans = self.lineEdit.text()
@@ -165,7 +192,7 @@ class Victorina(QMainWindow, Ui_MainWindow2):
         cur = self.con.cursor()
         result = cur.execute("""UPDATE record SET score = ? WHERE name = ?""", (self.balls, self.name)).fetchall()
         self.con.commit()
-        self.window2 = Rank(self.x)
+        self.window2 = Rank(self.balls)
         self.hide()
         self.window2.show()
 
@@ -173,7 +200,7 @@ class Victorina(QMainWindow, Ui_MainWindow2):
 class Rank(QMainWindow, Ui_MainWindow3):
     def __init__(self, balls):
         super(Rank, self).__init__()
-        self.x = x
+        self.balls = balls
         self.setupUi(self)
         self.initUI()
 
