@@ -27,7 +27,7 @@ class MyWidget(QMainWindow, Ui_MainWindow1):
         self.initUI()
 
     def initUI(self):
-        self.setWindowIcon(QIcon('python_embl1.jpg'))
+        self.setWindowIcon(QIcon('img/py_emb.jpg'))
         self.setFixedSize(354, 380)
 
         window = self.frameGeometry()
@@ -37,25 +37,25 @@ class MyWidget(QMainWindow, Ui_MainWindow1):
 
         self.pushButton.clicked.connect(self.sign_up)
 
-        self.pixmap = QPixmap('python_embl1.jpg')
+        self.pixmap = QPixmap('img/py_emb.jpg')
         self.label_5.setFixedSize(150, 120)
         self.label_5.move(90, 80)
         self.label_5.setPixmap(self.pixmap)
 
         self.con = sqlite3.connect("project.db")
 
-        nImage = QImage("020 New Life.png")
+        nImage = QImage("img/gardient.png")
         sImage = nImage.scaled(QSize(374, 390))
         palette = QPalette()
         palette.setBrush(QPalette.Window, QBrush(sImage))
         self.setPalette(palette)
 
     def sign_up(self):
-        name = self.lineEdit.text()
+        self.name = self.lineEdit.text()
         cur = self.con.cursor()
         try:
-            if name:
-                check = f"SELECT id FROM record WHERE name='{name}'"
+            if self.name:
+                check = f"SELECT id FROM record WHERE name='{self.name}'"
                 result = cur.execute(check).fetchall()
                 if result:
                     raise ExistingValue
@@ -69,62 +69,64 @@ class MyWidget(QMainWindow, Ui_MainWindow1):
             return
         cur.execute(
             "INSERT INTO record(name, score) VALUES (?, ?)",
-            (name, 0))
+            (self.name, 0))
         self.con.commit()
         self.new_window()
 
     def new_window(self):
-        self.window1 = Victorina()
+        self.window1 = Victorina(self.name)
         self.hide()
         self.window1.show()
 
 
 class Victorina(QMainWindow, Ui_MainWindow2):
-    def __init__(self):
+    def __init__(self, name):
         super(Victorina, self).__init__()
         self.setupUi(self)
         self.initUI()
+        self.name = name
 
     def initUI(self):
-        self.setWindowIcon(QIcon('python_embl1.jpg'))
+        self.setWindowIcon(QIcon('img/py_emb.jpg'))
         self.setFixedSize(639, 312)
+        self.con = sqlite3.connect("project.db")
         window = self.frameGeometry()
         window_central = QDesktopWidget().availableGeometry().center()
         window.moveCenter(window_central)
         self.move(window.topLeft())
-        with open('tests.txt', encoding='utf8') as f:
+        with open('testes/tests.txt', encoding='utf8') as f:
             self.text = f.read().split('\\')
         self.text = [value for value in self.text if value]
         self.question = []
         self.answer = []
         self.explanation = []
-        q = 1
+        counter = 1
         for i in range(len(self.text)):
             if i % 3 == 0:
                 self.question.append(self.text[i])
-            elif i == q:
+            elif i == counter:
                 self.answer.append(self.text[i])
-                q += 3
+                counter += 3
             else:
                 self.explanation.append(self.text[i])
-        self.x = 0
-        self.y = 0
-        self.lcdNumber.display(self.x)
+        self.balls = 0
+        self.answer_counter = 0
+        self.lcdNumber.display(self.balls)
         self.pushButton.clicked.connect(self.start)
         self.pushButton_2.clicked.connect(self.check)
 
-        oImage = QImage("020 New Life.png")
+        oImage = QImage("img/gardient.png")
         sImage = oImage.scaled(QSize(639, 312))
         palette = QPalette()
         palette.setBrush(QPalette.Window, QBrush(sImage))
         self.setPalette(palette)
 
     def start(self):
-        if self.y != len(self.question):
-            if self.y == 0:
-                self.label_3.setText(f'{self.y + 1}/10')
+        if self.answer_counter != len(self.question):
+            if self.answer_counter == 0:
+                self.label_3.setText(f'{self.answer_counter + 1}/10')
             self.listWidget.clear()
-            self.listWidget.addItem(self.question[self.y])
+            self.listWidget.addItem(self.question[self.answer_counter])
         else:
             self.finish()
 
@@ -133,47 +135,50 @@ class Victorina(QMainWindow, Ui_MainWindow2):
 
     def check(self):
         ans = self.lineEdit.text()
-        if ans == self.answer[self.y]:
+        if ans == self.answer[self.answer_counter]:
             message = QMessageBox.information(self, '', "Вы ответили правильно, так держать", QMessageBox.Ok)
             if message == QMessageBox.Ok:
-                self.x += 1
-                self.lcdNumber.display(self.x)
-                self.y += 1
-                self.label_3.setText(f'{self.y + 1}/10')
+                self.balls += 1
+                self.lcdNumber.display(self.balls)
+                self.answer_counter += 1
+                self.label_3.setText(f'{self.answer_counter + 1}/10')
                 self.lineEdit.clear()
                 self.start()
         else:
             message = QMessageBox.information(self, '', "Вы ответили неверно, хотети увидеть объяснение", QMessageBox.Yes, QMessageBox.No)
             if message == QMessageBox.Yes:
-                message = QMessageBox.information(self, '', self.explanation[self.y], QMessageBox.Ok)
+                message = QMessageBox.information(self, '', self.explanation[self.answer_counter], QMessageBox.Ok)
                 if message == QMessageBox.Ok:
-                    self.y += 1
-                    self.label_3.setText(f'{self.y + 1}/10')
+                    self.answer_counter += 1
+                    self.label_3.setText(f'{self.answer_counter + 1}/10')
                     self.lineEdit.clear()
                     self.start()
             else:
-                self.y += 1
-                self.label_3.setText(f'{self.y + 1}/10')
+                self.answer_counter += 1
+                self.label_3.setText(f'{self.answer_counter + 1}/10')
                 self.lineEdit.clear()
                 self.start()
 
 
 
     def finish(self):
+        cur = self.con.cursor()
+        result = cur.execute("""UPDATE record SET score = ? WHERE name = ?""", (self.balls, self.name)).fetchall()
+        self.con.commit()
         self.window2 = Rank(self.x)
         self.hide()
         self.window2.show()
 
 
 class Rank(QMainWindow, Ui_MainWindow3):
-    def __init__(self, x):
+    def __init__(self, balls):
         super(Rank, self).__init__()
         self.x = x
         self.setupUi(self)
         self.initUI()
 
     def initUI(self):
-        self.setWindowIcon(QIcon('python_embl1.jpg'))
+        self.setWindowIcon(QIcon('img/py_emb.jpg'))
         self.setFixedSize(428, 423)
 
         window = self.frameGeometry()
@@ -181,10 +186,10 @@ class Rank(QMainWindow, Ui_MainWindow3):
         window.moveCenter(window_central)
         self.move(window.topLeft())
         self.con = sqlite3.connect("project.db")
-        self.label_3.setText(f'{self.x}')
+        self.label_3.setText(f'{self.balls}')
         self.pushButton.clicked.connect(self.load)
 
-        oImage = QImage("020 New Life.png")
+        oImage = QImage("img/gardient.png")
         sImage = oImage.scaled(QSize(428, 423))
         palette = QPalette()
         palette.setBrush(QPalette.Window, QBrush(sImage))
