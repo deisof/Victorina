@@ -8,7 +8,7 @@ from design_for_victorina import Ui_MainWindow2
 from design_for_rank import Ui_MainWindow3
 
 
-class UserError(Exception):  # создание собствнных ошибок
+class UserError(Exception):
     pass
 
 
@@ -189,6 +189,7 @@ class Victorina(QMainWindow, Ui_MainWindow2):
 
 
     def finish(self):
+        self.my_qtimer.stop()
         cur = self.con.cursor()
         result = cur.execute("""UPDATE record SET score = ? WHERE name = ?""", (self.balls, self.name)).fetchall()
         self.con.commit()
