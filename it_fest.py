@@ -160,14 +160,15 @@ class Victorina(QMainWindow, Ui_MainWindow2):
 
 
     def finish(self):
-        self.window2 = Rank()
+        self.window2 = Rank(self.x)
         self.hide()
         self.window2.show()
 
 
 class Rank(QMainWindow, Ui_MainWindow3):
-    def __init__(self):
+    def __init__(self, x):
         super(Rank, self).__init__()
+        self.x = x
         self.setupUi(self)
         self.initUI()
 
@@ -193,6 +194,7 @@ class Rank(QMainWindow, Ui_MainWindow3):
         self.queue = f"SELECT name, score FROM record"
         cur = self.con.cursor()
         result = cur.execute(self.queue).fetchall()
+        result = sorted(result, key=lambda x: x[1], reverse=True)
         if not result:
             pass
         else:
