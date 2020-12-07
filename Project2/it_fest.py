@@ -129,7 +129,7 @@ class Victorina(QMainWindow, Ui_MainWindow2):
         if self.answer_counter != len(self.question):
             if self.answer_counter == 0:
                 self.label_3.setText(f'{self.answer_counter + 1}/10')
-                self.timer_start()
+            self.timer_start()
             self.time_left_int = self.duration
             self.pushButton_2.setEnabled(True)
             self.listWidget.clear()
@@ -161,6 +161,7 @@ class Victorina(QMainWindow, Ui_MainWindow2):
         self.lcdNumber_2.display(self.time_left_int)
 
     def check(self):
+        self.my_qtimer.stop()
         ans = self.lineEdit.text()
         if ans == self.answer[self.answer_counter]:
             message = QMessageBox.information(self, '', "Вы ответили правильно, так держать", QMessageBox.Ok)
