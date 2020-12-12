@@ -1,6 +1,6 @@
 import sqlite3
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QDesktopWidget, QMessageBox, QTableWidgetItem
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDesktopWidget, QMessageBox, QTableWidgetItem, QFileDialog
 from PyQt5.QtGui import QIcon, QPixmap, QImage, QPalette, QBrush
 from PyQt5.QtCore import QSize, QTimer
 from design_for_sign_up import Ui_MainWindow1
@@ -94,7 +94,10 @@ class Victorina(QMainWindow, Ui_MainWindow2):
         window_central = QDesktopWidget().availableGeometry().center()
         window.moveCenter(window_central)
         self.move(window.topLeft())
-        with open('testes/tests.txt', encoding='utf8') as f:
+        fname = QFileDialog.getOpenFileName(
+            self, 'Выбрать тест', 'C:/Users/alex2/PycharmProjects/Project2/testes/tests.txt',
+            'Текст (*.txt);;Все файлы (*)')[0]
+        with open(fname, encoding='utf8') as f:
             self.text = f.read().split('\\')
         self.text = [value for value in self.text if value]
         self.question = []
@@ -129,7 +132,7 @@ class Victorina(QMainWindow, Ui_MainWindow2):
         if self.answer_counter != len(self.question):
             if self.answer_counter == 0:
                 self.label_3.setText(f'{self.answer_counter + 1}/10')
-                self.timer_start()
+            self.timer_start()
             self.time_left_int = self.duration
             self.pushButton_2.setEnabled(True)
             self.listWidget.clear()
@@ -155,12 +158,14 @@ class Victorina(QMainWindow, Ui_MainWindow2):
                 self.label_3.setText(f'{self.answer_counter + 1}/10')
                 self.lineEdit.clear()
                 self.start()
+                self.my_qtimer.stop()
         self.update_gui()
 
     def update_gui(self):
         self.lcdNumber_2.display(self.time_left_int)
 
     def check(self):
+        self.my_qtimer.stop()
         ans = self.lineEdit.text()
         if ans == self.answer[self.answer_counter]:
             message = QMessageBox.information(self, '', "Вы ответили правильно, так держать", QMessageBox.Ok)
